@@ -1,0 +1,13 @@
+/vendor
+node_modules
+.env
+.env.*
+storage/*.key
+storage/*.log
+storage/framework/cache/data
+storage/framework/sessions
+storage/framework/views
+storage/logs
+.git
+.github
+docker-compose.override.yml
