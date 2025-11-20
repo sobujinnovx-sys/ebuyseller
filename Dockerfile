@@ -1,6 +1,9 @@
 # Stage 1: PHP-FPM with dependencies
 FROM php:8.2-fpm
 
+# Set working directory
+WORKDIR /var/www/html
+
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
     nginx \
@@ -14,26 +17,25 @@ RUN apt-get update && apt-get install -y \
     libjpeg62-turbo-dev \
     libxml2-dev \
     supervisor \
-    && docker-php-ext-install pdo_mysql mbstring zip exif pcntl bcmath gd
+    && docker-php-ext-install pdo_mysql mbstring zip exif pcntl bcmath gd \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Copy only composer files first (for caching)
 COPY composer.json composer.lock ./
+
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+
+# Install PHP dependencies
 RUN composer install --no-dev --optimize-autoloader
 
-# Create Laravel user
-RUN useradd -G www-data,root -u 1000 -d /home/laravel laravel \
-    && mkdir -p /home/laravel/.composer \
-    && chown -R laravel:laravel /home/laravel
-
-# Set working directory
-WORKDIR /var/www/html
-# Copy application
+# Copy the rest of the application
 COPY . .
 
 # Set permissions
-RUN mkdir -p /var/www/html/storage /var/www/html/bootstrap/cache \
-    && chown -R laravel:www-data /var/www/html \
-    && chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
+RUN mkdir -p storage bootstrap/cache \
+    && chown -R www-data:www-data /var/www/html \
+    && chmod -R 775 storage bootstrap/cache
 
 # Copy Nginx configuration
 COPY ./docker/nginx/default.conf /etc/nginx/sites-available/default
