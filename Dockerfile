@@ -14,27 +14,28 @@ RUN apt-get update && apt-get install -y \
     libjpeg62-turbo-dev \
     libxml2-dev \
     supervisor \
-    && docker-php-ext-install pdo_mysql mbstring zip exif pcntl bcmath gd
+    && docker-php-ext-install pdo_mysql mbstring zip exif pcntl bcmath gd \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
 WORKDIR /var/www/html
 
-# Copy composer files
+# Copy composer files first (cache optimization)
 COPY composer.json composer.lock ./
 
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 RUN composer install --no-dev --optimize-autoloader --no-scripts
 
-# Copy full application
+# Copy the rest of the application
 COPY . .
 
-# Set permissions
+# Set permissions for Laravel
 RUN mkdir -p storage bootstrap/cache \
     && chown -R www-data:www-data /var/www/html \
     && chmod -R 775 storage bootstrap/cache
 
-# Run artisan commands after copying full app
+# Run Laravel commands
 RUN php artisan key:generate || true \
     && php artisan config:cache || true \
     && php artisan route:cache || true \
@@ -45,8 +46,8 @@ RUN php artisan key:generate || true \
 # Copy Nginx configuration
 COPY ./docker/nginx/default.conf /etc/nginx/sites-available/default
 
-# Expose port 80
+# Expose HTTP port
 EXPOSE 80
 
-# Start PHP-FPM and Nginx
-CMD ["sh", "-c", "php-fpm -D && nginx -g 'daemon off;'"]
+# Start PHP-FPM and Nginx in the foreground (Render-friendly)
+CMD ["sh", "-c", "php-fpm -F & nginx -g 'daemon off;'"]
