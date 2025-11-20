@@ -29,6 +29,7 @@ WORKDIR /var/www/html
 
 # Copy application
 COPY . .
+RUN composer install --no-dev --optimize-autoloader
 
 # Set permissions
 RUN mkdir -p /var/www/html/storage /var/www/html/bootstrap/cache \
