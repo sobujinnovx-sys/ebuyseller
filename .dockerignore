@@ -11,3 +11,4 @@ storage/logs
 .git
 .github
 docker-compose.override.yml
+public/storage
