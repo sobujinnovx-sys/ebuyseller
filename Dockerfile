@@ -18,6 +18,7 @@ RUN apt-get update && apt-get install -y \
 
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+RUN composer install --no-dev --optimize-autoloader
 
 # Create Laravel user
 RUN useradd -G www-data,root -u 1000 -d /home/laravel laravel \
