@@ -1,5 +1,7 @@
+# Stage 1: PHP-FPM with dependencies
 FROM php:8.2-fpm
 
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
     nginx \
     git \
@@ -14,17 +16,17 @@ RUN apt-get update && apt-get install -y \
     supervisor \
     && docker-php-ext-install pdo_mysql mbstring zip exif pcntl bcmath gd
 
+# Set working directory
 WORKDIR /var/www/html
 
-# Copy composer files first
+# Copy composer files
 COPY composer.json composer.lock ./
 
-# Composer
+# Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
-
 RUN composer install --no-dev --optimize-autoloader --no-scripts
 
-# Copy full app
+# Copy full application
 COPY . .
 
 # Set permissions
@@ -32,7 +34,7 @@ RUN mkdir -p storage bootstrap/cache \
     && chown -R www-data:www-data /var/www/html \
     && chmod -R 775 storage bootstrap/cache
 
-# Run artisan
+# Run artisan commands after copying full app
 RUN php artisan key:generate || true \
     && php artisan config:cache || true \
     && php artisan route:cache || true \
@@ -40,9 +42,11 @@ RUN php artisan key:generate || true \
     && php artisan storage:link || true \
     && composer dump-autoload -o
 
-# nginx config
+# Copy Nginx configuration
 COPY ./docker/nginx/default.conf /etc/nginx/sites-available/default
 
+# Expose port 80
 EXPOSE 80
 
-CMD service nginx start && php-fpm
+# Start PHP-FPM and Nginx
+CMD ["sh", "-c", "php-fpm -D && nginx -g 'daemon off;'"]
