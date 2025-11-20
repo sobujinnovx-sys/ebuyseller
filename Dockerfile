@@ -44,3 +44,4 @@ EXPOSE 80
 
 # Start PHP-FPM and Nginx
 CMD ["sh", "-c", "service nginx start && php-fpm"]
+

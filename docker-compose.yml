@@ -1,46 +1,28 @@
-version: '3.8'
+version: "3.9"
 
 services:
   app:
     build:
       context: .
       dockerfile: Dockerfile
-      args:
-        user: laravel
-        uid: 1000
-    image: ebuyseller_app
-    restart: unless-stopped
-    working_dir: /var/www/html
+    container_name: ebuyseller-app
     volumes:
-      - ./:/var/www/html:cached
-      - ./storage:/var/www/html/storage
+      - .:/var/www/html
     environment:
-      - APP_ENV=local
-      - APP_DEBUG=true
-    depends_on:
-      - db
-
-  webserver:
-    image: nginx:stable-alpine
-    restart: unless-stopped
+      APP_ENV: local
+      APP_DEBUG: true
+      APP_KEY: base64:Tjjy4TfdarBd26GuhQPxo/HuDrivbxeflY/tUbBNj50=
+      DB_CONNECTION: mysql
+      DB_HOST: sql12.freesqldatabase.com
+      DB_PORT: 3306
+      DB_DATABASE: sql12808756
+      DB_USERNAME: sql12808756
+      DB_PASSWORD: Es2dENsz9p
     ports:
-      - "8000:80"
-    volumes:
-      - ./:/var/www/html:ro
-      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
-    depends_on:
-      - app
+      - "8080:80"
+    networks:
+      - laravel
 
-  db:
-    image: mysql:8.0
-    restart: unless-stopped
-    environment:
-      MYSQL_DATABASE: e_shop
-      MYSQL_ROOT_PASSWORD: secret
-      MYSQL_USER: user
-      MYSQL_PASSWORD: secret
-    volumes:
-      - dbdata:/var/lib/mysql
-
-volumes:
-  dbdata:
+networks:
+  laravel:
+    driver: bridge
