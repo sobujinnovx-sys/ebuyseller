@@ -1,9 +1,13 @@
+version: "3.9"
+
 services:
   app:
     build:
       context: .
       dockerfile: Dockerfile
     container_name: ebuyseller-app
+    volumes:
+      - .:/var/www/html
     environment:
       APP_ENV: local
       APP_DEBUG: true
