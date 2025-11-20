@@ -15,7 +15,7 @@ RUN apt-get update && apt-get install -y \
     libxml2-dev \
     supervisor \
     && docker-php-ext-install pdo_mysql mbstring zip exif pcntl bcmath gd
-
+COPY composer.json composer.lock ./
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 RUN composer install --no-dev --optimize-autoloader
@@ -27,8 +27,6 @@ RUN useradd -G www-data,root -u 1000 -d /home/laravel laravel \
 
 # Set working directory
 WORKDIR /var/www/html
-# Copy only composer files first (for caching)
-COPY composer.json composer.lock ./
 # Copy application
 COPY . .
 
