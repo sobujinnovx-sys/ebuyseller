@@ -27,7 +27,8 @@ RUN useradd -G www-data,root -u 1000 -d /home/laravel laravel \
 
 # Set working directory
 WORKDIR /var/www/html
-
+# Copy only composer files first (for caching)
+COPY composer.json composer.lock ./
 # Copy application
 COPY . .
 
