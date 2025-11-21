@@ -2,29 +2,33 @@ FROM php:8.2-cli
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
-    git curl unzip libpq-dev libonig-dev libzip-dev zip \
-    && docker-php-ext-install pdo pdo_mysql mbstring zip
+    git curl unzip libpq-dev libzip-dev zip \
+    && docker-php-ext-install pdo pdo_mysql mbstring zip exif \
+    && docker-php-ext-enable exif
 
 # Install Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
+# Set working directory
 WORKDIR /var/www
 
-# Copy app files
+# Copy application files
 COPY . .
 
-# Install PHP dependencies
-RUN composer install --no-dev --optimize-autoloader --ignore-platform-req=ext-exif
+# Install PHP dependencies (for production)
+RUN composer install --no-dev --optimize-autoloader
 
-# Laravel setup
-RUN php artisan config:clear && \
-    php artisan route:clear && \
-    php artisan view:clear
+# Ensure Laravel storage symlink exists
+RUN php artisan storage:link || true
 
-    # Render assigns PORT automatically
+# Laravel permissions
+RUN chmod -R 777 storage bootstrap/cache
+
+# Render provides PORT automatically
 ENV PORT=8080
 
+# Expose the port
 EXPOSE 8080
 
-# Start Laravel's built-in server
+# Start Laravel
 CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8080"]
