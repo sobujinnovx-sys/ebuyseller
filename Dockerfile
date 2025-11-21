@@ -1,34 +1,32 @@
 FROM php:8.2-cli
 
-# Install system dependencies
+# Install system dependencies and PHP extensions
 RUN apt-get update && apt-get install -y \
-    git curl unzip libpq-dev libzip-dev zip \
+    git curl unzip libpq-dev libzip-dev zip libexif-dev libpng-dev libjpeg-dev libonig-dev default-mysql-client \
     && docker-php-ext-install pdo pdo_mysql mbstring zip exif \
     && docker-php-ext-enable exif
 
 # Install Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-# Set working directory
 WORKDIR /var/www
 
-# Copy application files
+# Copy app files
 COPY . .
 
-# Install PHP dependencies (for production)
+# Install PHP dependencies
 RUN composer install --no-dev --optimize-autoloader
 
-# Ensure Laravel storage symlink exists
+# Ensure storage link exists
 RUN php artisan storage:link || true
 
-# Laravel permissions
+# Permissions
 RUN chmod -R 777 storage bootstrap/cache
 
-# Render provides PORT automatically
+# Render assigns PORT automatically
 ENV PORT=8080
 
-# Expose the port
 EXPOSE 8080
 
-# Start Laravel
+# Start Laravel built-in server
 CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8080"]
