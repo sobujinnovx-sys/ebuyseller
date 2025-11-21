@@ -1,47 +1,24 @@
-# Stage 1: PHP-FPM with dependencies
 FROM php:8.2-fpm
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
-    nginx \
-    git \
-    curl \
-    zip \
-    unzip \
-    libzip-dev \
-    libonig-dev \
-    libpng-dev \
-    libjpeg62-turbo-dev \
-    libxml2-dev \
-    supervisor \
-    && docker-php-ext-install pdo_mysql mbstring zip exif pcntl bcmath gd
+    git curl unzip libpq-dev libonig-dev libzip-dev zip \
+    && docker-php-ext-install pdo pdo_mysql mbstring zip
 
 # Install Composer
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-# Create Laravel user
-RUN useradd -G www-data,root -u 1000 -d /home/laravel laravel \
-    && mkdir -p /home/laravel/.composer \
-    && chown -R laravel:laravel /home/laravel
+WORKDIR /var/www
 
-# Set working directory
-WORKDIR /var/www/html
-
-# Copy application
+# Copy app files
 COPY . .
+
+# Install PHP dependencies
 RUN composer install --no-dev --optimize-autoloader
 
-# Set permissions
-RUN mkdir -p /var/www/html/storage /var/www/html/bootstrap/cache \
-    && chown -R laravel:www-data /var/www/html \
-    && chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
+# Laravel setup
+RUN php artisan config:clear && \
+    php artisan route:clear && \
+    php artisan view:clear
 
-# Copy Nginx configuration
-COPY ./docker/nginx/default.conf /etc/nginx/sites-available/default
-
-# Expose HTTP port
-EXPOSE 80
-
-# Start PHP-FPM and Nginx
-CMD ["sh", "-c", "service nginx start && php-fpm"]
-
+CMD ["php-fpm"]
