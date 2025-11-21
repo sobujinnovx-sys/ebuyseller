@@ -1,3 +1,4 @@
+# Stage 1: PHP + Composer
 FROM php:8.2-fpm
 
 # Install system dependencies
@@ -12,24 +13,28 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 # Set working directory
 WORKDIR /var/www
 
-# Copy application
+# Copy application files
 COPY . .
 
 # Install PHP dependencies
 RUN composer install --no-dev --optimize-autoloader --ignore-platform-req=ext-exif
 
-# Laravel setup
+# Set permissions
 RUN php artisan storage:link || true
 RUN chmod -R 777 storage bootstrap/cache
+
+# Clear caches
 RUN php artisan config:clear && php artisan route:clear && php artisan view:clear
 
-# Copy Nginx & Supervisor configs
-COPY default.conf /etc/nginx/conf.d/default.conf
-COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+# Copy Nginx & Supervisor config
+COPY ./docker/default.conf.template /etc/nginx/conf.d/default.conf.template
+COPY ./docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
-# Expose port for Render
+# Render assigns PORT automatically
 ENV PORT=8080
+
+# Expose port
 EXPOSE 8080
 
-# Start Supervisor (which will run Nginx + PHP-FPM)
+# Start Supervisor
 CMD ["/usr/bin/supervisord", "-n", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
